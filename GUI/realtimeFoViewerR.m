@@ -38,7 +38,7 @@ function varargout = realtimeFoViewerR(varargin)
 
 % Edit the above text to modify the response to help realtimeFoViewerR
 
-% Last Modified by GUIDE v2.5 24-Dec-2018 16:49:23
+% Last Modified by GUIDE v2.5 24-Dec-2018 21:07:53
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -135,7 +135,9 @@ function myGUIdata = setDefault(myGUIdata)
 myGUIdata.samplingFrequency = 44100;
 myGUIdata.channels_in_octav = 6;
 myGUIdata.low_frequency = 110 * 2 ^ (-12 / 12);%110 * 2 ^ (-12 / 12);% A2 55 * 2 ^ (-6 / 12);%
-myGUIdata.high_freuency = 1000;%1301;
+myGUIdata.low_frequency_init = myGUIdata.low_frequency;
+myGUIdata.high_freuency = 1300;%1301;
+myGUIdata.high_freuency_init = myGUIdata.high_freuency;
 myGUIdata.halfTimeSpan = 0.008; % 8 ms (default)
 myGUIdata.fftl = 4096;
 myGUIdata.downSampling = 1; % 1:on 0:off
@@ -178,9 +180,16 @@ for ii = 1:length(chromaticScale)
     hold all;
 end
 axes(myGUIdata.GcrefAxis);
-imshow('gclefsg2.jpg');
+%imshow('gclefsg2.jpg');
+aaa = imread('gclefsg2.jpg');
+aaa(aaa > 230) = round(237/255*63);
+image(aaa); colormap(gray);axis off
 axes(myGUIdata.FcrefAxis);
-imshow('fclefsg2.jpg');
+%imshow('fclefsg2.jpg');
+aaa = imread('fclefsg2.jpg');
+aaa(aaa > 230) = round(237/255*63);
+image(aaa); colormap(gray);axis off
+axes(myGUIdata.FcrefAxis);
 axes(myGUIdata.musicalAxis);
 gclefstaff = 440 * 2 .^ ([-5 -2 2 5 8] / 12);
 for ii = 1:5
@@ -253,16 +262,18 @@ set(myGUIdata.foMarkerHandle(4), 'linewidth', 1);
 axis([0 1 myGUIdata.low_frequency myGUIdata.high_freuency]);
 set(myGUIdata.IndicatorAxis, 'xtick', [], 'ytick', [])
 %-- clef size adjust
-sizeMulti = log(1301 / 55) / log(fH / fL);
+sizeMulti = log(myGUIdata.high_freuency_init / myGUIdata.low_frequency_init) / log(fH / fL);
 gClefLoc = 0.317 + 0.477 * log(gclefstaff(2) / fL) / log(fH / fL);
 fClefLoc = 0.317 + 0.477 * log(fclefstaff(4) / fL) / log(fH / fL);
 gClefPosition = get(myGUIdata.GcrefAxis, 'position');
-gClefPosition(2) = gClefLoc - 0.0916 * sizeMulti;
-gClefPosition(4) = 0.237 * sizeMulti;
+%gClefPosition(2) = gClefLoc - 0.0916 * sizeMulti;
+gClefPosition(2) = gClefLoc - 0.0716 * sizeMulti;
+gClefPosition(4) = 0.1964 * sizeMulti;
 set(myGUIdata.GcrefAxis, 'position', gClefPosition);
 fClefPosition = get(myGUIdata.FcrefAxis, 'position');
-fClefPosition(2) = fClefLoc - 0.0770 * sizeMulti;
-fClefPosition(4) = 0.121 * sizeMulti;
+%fClefPosition(2) = fClefLoc - 0.0770 * sizeMulti;
+fClefPosition(2) = fClefLoc - 0.0620 * sizeMulti;
+fClefPosition(4) = 0.0899 * sizeMulti;
 set(myGUIdata.FcrefAxis, 'position', fClefPosition);
 %------- periodicity display
 axes(myGUIdata.periodicityAxis);
