@@ -29,9 +29,13 @@ Entering these names invoke applicatonsl.
 
 The test directory consists of MATLAB scripts to test core functions.
 
+## Demo movies and documents
+
+The doc directory consists of demonstration movies including short introduction and documents.
+
 ## Requirement
 
-MATLAB with signalprocessing toolbox. The GUI tools were tested on a MacBook Pro and a Windows 10 machine. Set paths to src, GUI and test directories.
+MATLAB with signalprocessing toolbox. The GUI tools were tested on a MacBook Pro and a Windows 10 machine. Set paths to src, GUI and test directories. The files were scanned using VirusBarrier (Mac) and Norton Security Derux (Windows).
 
 ## References
 
