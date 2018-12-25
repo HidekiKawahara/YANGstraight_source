@@ -38,7 +38,7 @@ function varargout = realtimeFoViewerR(varargin)
 
 % Edit the above text to modify the response to help realtimeFoViewerR
 
-% Last Modified by GUIDE v2.5 24-Dec-2018 21:42:49
+% Last Modified by GUIDE v2.5 26-Dec-2018 06:52:00
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -146,9 +146,9 @@ myGUIdata.wavePowerDuration = 2.4;
 myGUIdata.stretching_factor = 1.25;
 myGUIdata.recorderTimerInterval = 0.067;
 myGUIdata.playerTimerInterval = 0.05;
-%timerEventInterval = 0.1; % in second. default 0.1 s
-%myGUIdata.timerEventInterval = timerEventInterval; % for drawing
 myGUIdata.maxTargetPoint = 400;% This is for audio recorder
+myGUIdata.periodicity_mask_level = 0.12;
+myGUIdata.sync_indicator_level = 0.2;
 fs = myGUIdata.samplingFrequency;
 xt = rand(round(fs / 5), 1);
 myGUIdata.initialStruct = sourceInformationAnalysis(xt, fs, [1 length(xt)], ...
@@ -436,12 +436,16 @@ if length(x_trim) > 10
     outputSrept = sourceInformationAnalysis(x_trim, fs, ...
         [1 length(x_trim)], handles.initialStruct);
     for ii = 1:4
+        tmp_Mask = outputSrept.estPeriod(end - bias - updatefoLength + 1:end - bias, ii);
+        tmp_Mask(tmp_Mask >= handles.periodicity_mask_level) = 1;
+        tmp_Mask(tmp_Mask < handles.periodicity_mask_level) = NaN;
         xdata = get(handles.foCandHandle(ii), 'xdata');
         xdata = xdata - xdata(end) + handles.lastPoint / fs;
         ydata = get(handles.foCandHandle(ii), 'ydata');
         ydata(1:end - updatefoLength) = ydata(1 + updatefoLength:end);
         ydata(end - updatefoLength + 1:end) = ...
-            outputSrept.fixed_points_freq(end - bias - updatefoLength + 1:end - bias, ii);
+            outputSrept.fixed_points_freq(end - bias - updatefoLength + 1:end - bias, ii) ...
+            .* tmp_Mask;
         set(handles.foCandHandle(ii), 'ydata', ydata);
         set(handles.foCandHandle(ii), 'xdata', xdata);
         markery = get(handles.foMarkerHandle(ii), 'ydata');
@@ -456,7 +460,7 @@ if length(x_trim) > 10
     set(handles.mainViewerAxis, 'xlim', xdata([1 end]));
     set(handles.periodicityAxis, 'xlim', xdata([1 end]));
     %---- musical note and frequency
-    if mean(outputSrept.estPeriod(end - bias - updatefoLength + 1:end - bias, 1)) > 0.3
+    if mean(outputSrept.estPeriod(end - bias - updatefoLength + 1:end - bias, 1)) > handles.sync_indicator_level
         mean_freq = mean(outputSrept.fixed_points_freq(end - bias - updatefoLength + 1:end - bias, 1));
         set(handles.freqText, 'string', [num2str(mean_freq, '%5.2f') '  Hz'], 'visible', 'on');
         ydata = get(handles.noteHandle1, 'ydata');
