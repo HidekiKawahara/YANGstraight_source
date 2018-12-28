@@ -23,7 +23,7 @@ The GUI directory consists of interactive tools (including realtime tools) for t
 2. realtimeFoViewerR
 3. detailInspector
 
-Entering these names invoke applicatonsl.
+Entering these names invoke applications.
 
 ## Test scripts
 
