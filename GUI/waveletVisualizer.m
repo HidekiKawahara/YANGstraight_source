@@ -38,7 +38,7 @@ function varargout = waveletVisualizer(varargin)
 
 % Edit the above text to modify the response to help waveletVisualizer
 
-% Last Modified by GUIDE v2.5 24-Dec-2018 15:21:21
+% Last Modified by GUIDE v2.5 28-Dec-2018 10:41:45
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -134,7 +134,7 @@ myGUIdata.channels_in_octave = 8;
 myGUIdata.low_frequency = 110 * 2^(-1/3);%100;
 myGUIdata.high_freuency = 5000;
 myGUIdata.halfTimeSpan = 0.008; % 8 ms (default)
-myGUIdata.fftl = 2048;
+myGUIdata.fftl = 2048 * 2;
 myGUIdata.stretching_factor = 1.0;
 myGUIdata.synchPhase = -120;
 set(myGUIdata.viewerWidthPopup, 'value', 3);
@@ -155,8 +155,6 @@ n_data = length(xdata);
 channels_oct = myGUIdata.channels_in_octave;
 base_index = 1:n_data;
 buffer_index = 1:3 * n_data;
-%buffer_index(end)
-%size(myGUIdata.imageBuffer)
 switch get(myGUIdata.recordObj1,'running')
     case 'on'
         myGUIdata.tmpAudio = getaudiodata(myGUIdata.recordObj1);
@@ -169,17 +167,14 @@ switch get(myGUIdata.recordObj1,'running')
             x_original = x(buffer_index + wvltStr.wvlt(1).bias);
             instFreqBuffer = angle(myGUIdata.imageBuffer ./ myGUIdata.imageBuffer(:, max(1, buffer_index - 1)));
             myGUIdata.imageBufferTmp = angle(myGUIdata.imageBuffer);
-            rawSTD = (std(instFreqBuffer(:, 2:end)') * myGUIdata.samplingFrequency / 2 / pi) .^ 2;
-            rawSTD = sqrt(rawSTD([1 1:end-1]) + rawSTD + rawSTD([2:end end]));
-            fsdData = log(rawSTD(:) ./ fc_list(:));
             bw_list = 1 ./ ((2^(1/channels_oct/2)-2^(-1/channels_oct/2)) * fc_list * 2 * pi);
             gd_gram_raw = -diag(bw_list) * angle(myGUIdata.imageBuffer ./ ...
                 myGUIdata.imageBuffer([1 1:end-1], :));
-            gd_gram = diag(fc_list) * gd_gram_raw;
-            gdData = std(max(-1, min(1, gd_gram(:, 2:end)')));
-            gdData(1) = gdData(2);
-            gdData = log((gdData([1 1:end-1]) + gdData +gdData([2:end end])) / 3);
-            mixData = gdData(:) + fsdData(:); % mixed cost function for fo
+            amp_gram = (abs(myGUIdata.imageBuffer) .* abs(myGUIdata.imageBuffer([1 1:end-1], :))) .^ 2;
+            gd_gram = (diag(fc_list) * gd_gram_raw) .^ 2;
+            gdData = sum(gd_gram .* amp_gram, 2) ./ sum(amp_gram, 2);
+            gdData = log((gdData +gdData([2:end end])) / 2);
+            mixData = gdData(:);
             [~, min_ch] = min(mixData);%gdData(:) + fsdData(:));
             fund_phase = angle(myGUIdata.imageBuffer(min_ch, :) * exp(-1i * myGUIdata.synchPhase / 360 * 2 * pi)); %myGUIdata.synchPhase
             avfo = mean(instFreqBuffer(min_ch, 2:end)) * myGUIdata.samplingFrequency / 2 / pi;
@@ -198,7 +193,6 @@ switch get(myGUIdata.recordObj1,'running')
             selector = max(1, min(buffer_index(end), base_index + center_id - round(base_index(end) / 2)));
             fs = myGUIdata.samplingFrequency;
             contents = cellstr(get(myGUIdata.displayImagePopup,'String'));
-            %myGUIdata.displayAttribute = contents{get(myGUIdata.displayImagePopup,'Value')};
             switch contents{get(myGUIdata.displayImagePopup,'Value')} %myGUIdata.displayAttribute
                 case 'Phase'
                     myGUIdata.waveletImage = myGUIdata.imageBufferTmp(:, selector);
