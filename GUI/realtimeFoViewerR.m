@@ -38,7 +38,7 @@ function varargout = realtimeFoViewerR(varargin)
 
 % Edit the above text to modify the response to help realtimeFoViewerR
 
-% Last Modified by GUIDE v2.5 26-Dec-2018 06:52:00
+% Last Modified by GUIDE v2.5 10-Jan-2019 01:04:46
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -101,6 +101,8 @@ myGUIdata.audiomode = 'record';
 %--- finalize
 guidata(hObject, myGUIdata);
 myGUIdata = startRealtime(myGUIdata);
+guidata(hObject, myGUIdata);
+
 set(myGUIdata.startButton, 'enable', 'off');
 set(myGUIdata.stopbutton, 'enable', 'on');
 set(myGUIdata.quitbutton, 'enable', 'on');
@@ -113,6 +115,8 @@ set(myGUIdata.TFifSpecButton, 'value', 1);
 myGUIdata.output = hObject;
 
 guidata(hObject, myGUIdata);
+
+pause(5);
 
 % UIWAIT makes realtimeFoViewerR wait for user response (see UIRESUME)
 % uiwait(handles.realtimeFoVierGUI);
@@ -143,17 +147,23 @@ myGUIdata.fftl = 4096;
 myGUIdata.downSampling = 1; % 1:on 0:off
 myGUIdata.lastPoint = 1;
 myGUIdata.wavePowerDuration = 2.4;
-myGUIdata.stretching_factor = 1.25;
+myGUIdata.stretching_factor = 1.05;
 myGUIdata.recorderTimerInterval = 0.067;
 myGUIdata.playerTimerInterval = 0.05;
 myGUIdata.maxTargetPoint = 400;% This is for audio recorder
-myGUIdata.periodicity_mask_level = 0.12;
+%myGUIdata.prob_threshold = 0.9; %
+%myGUIdata.periodicity_mask_level = prob2maskingLevel(myGUIdata.prob_threshold);%[0.25 0.12 0.064 0.044];
+myGUIdata.periodicity_mask_level = 6; % noisy candidate suppressor
 myGUIdata.sync_indicator_level = 0.2;
 fs = myGUIdata.samplingFrequency;
 xt = rand(round(fs / 5), 1);
-myGUIdata.initialStruct = sourceInformationAnalysis(xt, fs, [1 length(xt)], ...
+%myGUIdata.initialStruct = sourceInformationAnalysis(xt, fs, [1 length(xt)], ...
+%    myGUIdata.low_frequency, myGUIdata.high_freuency, ...
+%    myGUIdata.channels_in_octav, myGUIdata.downSampling, myGUIdata.stretching_factor);
+myGUIdata.initialStruct = sourceAttributesAnalysis(xt, fs, [1 length(xt)], ...
     myGUIdata.low_frequency, myGUIdata.high_freuency, ...
-    myGUIdata.channels_in_octav, myGUIdata.downSampling, myGUIdata.stretching_factor);
+    myGUIdata.channels_in_octav, myGUIdata.downSampling, myGUIdata.stretching_factor, ...
+    'dpss', 8, 4);
 myGUIdata.wvltStrDs = myGUIdata.initialStruct.wvltStrDs;
 myGUIdata.lastPointer = 1;
 end
@@ -229,7 +239,9 @@ for ii = 1:5
     semilogy([-10, bufferLengthInTime + 10], fclefstaff(ii) * [1 1], 'linewidth', 2, ...
         'color', 0.4 * [1 1 1]);
 end
-outputSrept = sourceInformationAnalysis(randn(length(xt), 1), fs, ...
+%outputSrept = sourceInformationAnalysis(randn(length(xt), 1), fs, ...
+%    [1 length(xt)], myGUIdata.initialStruct);
+outputSrept = sourceAttributesAnalysis(randn(length(xt), 1), fs, ...
     [1 length(xt)], myGUIdata.initialStruct);
 %myGUIdata.foCandHandle = semilogy(outputSrept.time_axis_wavelet, ...
 %    outputSrept.fixed_points_freq(:, 1:4), '.');
@@ -320,6 +332,14 @@ axis off
 end
 
 function myGUIdata = startRealtime(myGUIdata)
+ydata = get(myGUIdata.waveWaveHandle, 'ydata');
+set(myGUIdata.waveWaveHandle, 'ydata', ydata * 0);
+for ii = 1:4
+    ydata = get(myGUIdata.foCandHandle(ii), 'ydata');
+    set(myGUIdata.foCandHandle(ii), 'ydata', ydata * 0);
+    ydata = get(myGUIdata.perCandHandle(ii), 'ydata');
+    set(myGUIdata.perCandHandle(ii), 'ydata', ydata * 0);
+end
 myGUIdata.audioRecorderCount = myGUIdata.maxAudioRecorderCount;
 %myGUIdata.lastPosition = 1;
 myGUIdata.lastPointer = 1;
@@ -406,7 +426,7 @@ bias = bias * handles.initialStruct.downSamplinbgRate;
 ydata = get(handles.waveWaveHandle, 'ydata');
 sampleLength = length(ydata);
 tmpWave = handles.recordingBuffer(max(1, min(length(handles.recordingBuffer), ...
-    (handles.lastPoint - sampleLength + 1 - bias):handles.lastPoint - bias)));
+    (handles.lastPoint - sampleLength + 1 - 2*bias):handles.lastPoint - 2*bias)));
 set(handles.waveWaveHandle, 'ydata', tmpWave);
 if max(abs(tmpWave)) < 0.000001
     ylim = [-1 1];
@@ -424,50 +444,56 @@ handles = get(hObject, 'userdata');
 fs = handles.samplingFrequency;
 fc_list = handles.wvltStrDs.fc_list;
 maxBias = handles.initialStruct.wvltStrDs.wvlt(1).bias * 2 + 2;
-bias = handles.initialStruct.wvltStrDs.wvlt(1).bias;
+bias = handles.initialStruct.wvltStrDs.wvlt(1).bias + 12; % 12 is a dirty fix
 downSamplinbgRate = handles.initialStruct.downSamplinbgRate;
 updatefoLength = round(handles.updateLength / downSamplinbgRate);
-tmp_length = max(1, maxBias * downSamplinbgRate + handles.updateLength);
+tmp_length = max(1, maxBias * downSamplinbgRate + round(handles.updateLength * 1.5));
 x_trim = handles.recordingBuffer(max(1, min(length(handles.recordingBuffer), ...
     (handles.lastPoint - tmp_length + 1):handles.lastPoint)));
 handles.bestSyncCenter = [];
 mean_freq = 110;
 if length(x_trim) > 10
-    outputSrept = sourceInformationAnalysis(x_trim, fs, ...
+%    outputSrept = sourceInformationAnalysis(x_trim, fs, ...
+%        [1 length(x_trim)], handles.initialStruct);
+    outputSrept = sourceAttributesAnalysis(x_trim, fs, ...
         [1 length(x_trim)], handles.initialStruct);
     for ii = 1:4
-        tmp_Mask = outputSrept.estPeriod(end - bias - updatefoLength + 1:end - bias, ii);
-        tmp_Mask(tmp_Mask >= handles.periodicity_mask_level) = 1;
+        %tmp_Mask = outputSrept.estPeriod(end - bias - updatefoLength + 1:end - bias, ii);
+        %tmp_Mask(tmp_Mask >= handles.periodicity_mask_level(ii)) = 1;
+        %tmp_Mask(tmp_Mask < handles.periodicity_mask_level(ii)) = NaN;
+        tmp_Mask = outputSrept.fixed_points_measure(end - 2*bias - updatefoLength + 1:end - 2*bias, ii);
         tmp_Mask(tmp_Mask < handles.periodicity_mask_level) = NaN;
+        tmp_Mask(tmp_Mask >= handles.periodicity_mask_level) = 1;
         xdata = get(handles.foCandHandle(ii), 'xdata');
         xdata = xdata - xdata(end) + handles.lastPoint / fs;
         ydata = get(handles.foCandHandle(ii), 'ydata');
         ydata(1:end - updatefoLength) = ydata(1 + updatefoLength:end);
         ydata(end - updatefoLength + 1:end) = ...
-            outputSrept.fixed_points_freq(end - bias - updatefoLength + 1:end - bias, ii) ...
+            outputSrept.fixed_points_freq(end - 2*bias - updatefoLength + 1:end - 2*bias, ii) ...
             .* tmp_Mask;
         set(handles.foCandHandle(ii), 'ydata', ydata);
         set(handles.foCandHandle(ii), 'xdata', xdata);
-        markery = get(handles.foMarkerHandle(ii), 'ydata');
-        set(handles.foMarkerHandle(ii), 'ydata', markery * 0 + ydata(end));
+        %markery = get(handles.foMarkerHandle(ii), 'ydata');
+        set(handles.foMarkerHandle(ii), 'ydata', [1 1] * ydata(end), ...
+            'visible', 'on');
         ydata = get(handles.perCandHandle(ii), 'ydata');
         ydata(1:end - updatefoLength) = ydata(1 + updatefoLength:end);
         ydata(end - updatefoLength + 1:end) = ...
-            outputSrept.estPeriod(end - bias - updatefoLength + 1:end - bias, ii);
+            outputSrept.estPeriod(end - 2*bias - updatefoLength + 1:end - 2*bias, ii);
         set(handles.perCandHandle(ii), 'ydata', ydata);
         set(handles.perCandHandle(ii), 'xdata', xdata);
     end
     set(handles.mainViewerAxis, 'xlim', xdata([1 end]));
     set(handles.periodicityAxis, 'xlim', xdata([1 end]));
     %---- musical note and frequency
-    if mean(outputSrept.estPeriod(end - bias - updatefoLength + 1:end - bias, 1)) > handles.sync_indicator_level
-        mean_freq = mean(outputSrept.fixed_points_freq(end - bias - updatefoLength + 1:end - bias, 1));
+    if mean(outputSrept.estPeriod(end - 2*bias - updatefoLength + 1:end - 2*bias, 1)) > handles.sync_indicator_level
+        mean_freq = mean(outputSrept.fixed_points_freq(end - 2*bias - updatefoLength + 1:end - 2*bias, 1));
         set(handles.freqText, 'string', [num2str(mean_freq, '%5.2f') '  Hz'], 'visible', 'on');
         ydata = get(handles.noteHandle1, 'ydata');
         set(handles.noteHandle1, 'visible', 'on', 'ydata', ydata * 0 + mean_freq);
         set(handles.syncIndicatorHandle, 'visible', 'on');
         [~, bestChannel] = min(abs(mean_freq - fc_list));
-        fundamentalPhase = angle(outputSrept.rawWavelet(end - bias - updatefoLength + 1:end - bias, bestChannel));
+        fundamentalPhase = angle(outputSrept.rawWavelet(end - 2*bias - updatefoLength + 1:end - 2*bias, bestChannel));
         base_idx = 1:length(fundamentalPhase);
         anchorCandidates = base_idx(fundamentalPhase .* fundamentalPhase([2:end end]) < 0 ...
             & fundamentalPhase < 0 & abs(fundamentalPhase - fundamentalPhase([2:end end])) < pi);
@@ -492,7 +518,7 @@ function monitorDisplayTimerFcn(hObject, event, handles)
 %handles = get(hObject, 'userdata');
 ydata = get(handles.waveHandle, 'ydata');
 sampleLength = length(ydata);
-bias = handles.initialStruct.wvltStrDs.wvlt(1).bias * handles.initialStruct.downSamplinbgRate;
+bias = handles.initialStruct.wvltStrDs.wvlt(1).bias * handles.initialStruct.downSamplinbgRate*2;
 if ~isempty(handles.bestSyncCenter)
     tmpWave = handles.recordingBuffer(max(1,((handles.lastPoint - handles.updateLength * 4 + 1):handles.lastPoint) - bias));
     tmpWave = tmpWave(max(1, min(length(tmpWave), end - handles.updateLength + handles.bestSyncCenter + (1:sampleLength) - round(sampleLength / 2))));

@@ -22,7 +22,7 @@ function varargout = detailInspector(varargin)
 
 % Edit the above text to modify the response to help detailInspector
 
-% Last Modified by GUIDE v2.5 24-Dec-2018 19:05:03
+% Last Modified by GUIDE v2.5 10-Jan-2019 01:05:38
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -169,14 +169,19 @@ x_sel = handles.sounddata + ...
     randn(length(handles.sounddata), 1) * std(handles.sounddata) * 2 ^ (-24);
 handles.sounddata = x_sel;
 handles.samplingFrequency = fs;
-outputS = sourceInformationAnalysis(x_sel, fs, [1 length(x_sel)], 27.5, 1400, 6);
+%outputS = sourceInformationAnalysis(x_sel, fs, [1 length(x_sel)], 27.5, 1400, 6);
+watchon;
+outputS = sourceAttributesAnalysis(x_sel, fs, [1 length(x_sel)], 27, 1400, 6);
+watchoff;
 set(handles.freqAssignAxis, 'visible', 'on');
 axes(handles.freqAssignAxis);
-estSNR = 10 * log10(outputS.fixed_points_measure) - 18;
+%estSNR = 10 * log10(outputS.fixed_points_measure) - 18;
+estSNR = outputS.fixed_points_measure;
 handles.fqSNRScatterHandle = semilogx(outputS.fixed_points_freq(:, 1:4), estSNR(:, 1:4), '.');
 grid on;
 xlabel('frequency (Hz)');
 ylabel('estimated SNR (dB)');
+set(handles.freqAssignAxis, 'ylim', [-10 55]);
 set(handles.selectButton, 'enable', 'on');
 set(handles.freqAxis, 'visible', 'off');
 set(handles.snrAxis, 'visible', 'off');
@@ -199,13 +204,21 @@ set(handles.fqSNRScatterHandle(ii), 'visible', 'off');
 end
 x_sel = handles.sounddata;
 fs = handles.samplingFrequency;
+winType = 'sixterm';
+integration_time = 15; % 15 ms seems better for inspection
 %handles.channels_per_octave = 12;
 %handles.downsampling = 1;
 %handles.stretching = 1.05;
-outputS = sourceInformationAnalysis(x_sel, fs, [1 length(x_sel)], ...
+%outputS = sourceInformationAnalysis(x_sel, fs, [1 length(x_sel)], ...
+%    handles.frequency_low, handles.frequency_high, handles.channels_per_octave, ...
+%    handles.downsampling, handles.stretching);
+handles.detailInspectorGUI = watchon;
+outputS = sourceAttributesAnalysis(x_sel, fs, [1 length(x_sel)], ...
     handles.frequency_low, handles.frequency_high, handles.channels_per_octave, ...
-    handles.downsampling, handles.stretching);
-estSNR = 10 * log10(outputS.fixed_points_measure) - 18;
+    handles.downsampling, handles.stretching, winType, integration_time);
+watchoff;
+%estSNR = 10 * log10(outputS.fixed_points_measure) - 18;
+estSNR = outputS.fixed_points_measure;
 set(handles.freqAxis, 'visible', 'on');
 set(handles.snrAxis, 'visible', 'on');
 set(handles.waveAxis, 'visible', 'on');
@@ -222,6 +235,7 @@ grid on;
 axis([tx([1 end]) -15 50]) 
 axes(handles.waveAxis);
 plot(tx_audio, x_sel);
+set(handles.snrAxis, 'ylim', [-10 55]);
 set(handles.selectButton, 'enable', 'off');
 set(handles.snrApplyButton, 'visible', 'on');
 set(handles.freqApplyButton, 'visible', 'on');
@@ -345,13 +359,21 @@ handles = guidata(hObject);
 currentXlim = get(handles.waveAxis, 'xlim');
 x_sel = handles.sounddata;
 fs = handles.samplingFrequency;
+wintype = 'sixterm';
+integration_time = 15; 
 %handles.channels_per_octave = 12;
 %handles.downsampling = 1;
 %handles.stretching = 1.05;
-outputS = sourceInformationAnalysis(x_sel, fs, [1 length(x_sel)], ...
+handles.detailInspectorGUI = watchon;
+%outputS = sourceInformationAnalysis(x_sel, fs, [1 length(x_sel)], ...
+%    handles.frequency_low, handles.frequency_high, handles.channels_per_octave, ...
+%    handles.downsampling, handles.stretching);
+outputS = sourceAttributesAnalysis(x_sel, fs, [1 length(x_sel)], ...
     handles.frequency_low, handles.frequency_high, handles.channels_per_octave, ...
-    handles.downsampling, handles.stretching);
-estSNR = 10 * log10(outputS.fixed_points_measure) - 18;
+    handles.downsampling, handles.stretching, wintype, integration_time);
+watchoff;
+%estSNR = 10 * log10(outputS.fixed_points_measure) - 18;
+estSNR = outputS.fixed_points_measure;
 axes(handles.freqAxis);
 tx = outputS.time_axis_wavelet;
 %tx_audio = (1:length(x_sel)) / fs;
@@ -362,7 +384,7 @@ axis([currentXlim handles.frequency_low handles.frequency_high]);
 axes(handles.snrAxis);
 plot(tx, estSNR(:, 4:-1:1), '.');
 grid on;
-axis([currentXlim -15 50]) 
+axis([currentXlim -10 55]) 
 %axes(handles.waveAxis);
 %plot(tx_audio, x_sel);
 guidata(hObject, handles);
