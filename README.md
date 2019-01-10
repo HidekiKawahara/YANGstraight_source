@@ -10,10 +10,16 @@ GUI tools are for users to acquire intuitive understanding of wavelet phase and 
 
 The GUI tools and test scripts uses the following core functions.
 
+1. designAnalyticWavelet.m
+2. waveletAttributesAnalyzer.m
+3. sourceAttributesAnalysis.m
+4. staticTrigBsplinePowerSpec.m
+
+### The following functions are obsolate. These will be removed in the coming release
+
 1. designCos6Wavelet.m
 2. waveletSourceAnalyzer.m
 3. sourceInformationAnalysis.m
-4. staticTrigBsplinePowerSpec.m
 
 ## GUI tools
 
