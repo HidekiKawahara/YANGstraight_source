@@ -35,9 +35,17 @@ Entering these names invoke applications.
 
 Installer of realtimeFoViewer GUI application are linked below. WARNING: The installer starts downloading MATLAB runtime package. The size is about 900 MB. It also makes a clickable application and installes it in the designaged folder.
 
+1. Realime fo visualization
+
  [Mac Installer ](http://www.wakayama-u.ac.jp/~kawahara/Resources/realtimeFoViewerMac.zip)
  
  [Windows Installer ](http://www.wakayama-u.ac.jp/~kawahara/Resources/realtimeFoViewerWin.zip)
+
+2. Realtime wavelet analysis visualization
+
+ [Mac Installer ](http://www.wakayama-u.ac.jp/~kawahara/Resources/waveletVisualizerMac.zip)
+ 
+ [Windows Installer ](http://www.wakayama-u.ac.jp/~kawahara/Resources/waveletVisualizerWin.zip)
 
 
 ## Test scripts
