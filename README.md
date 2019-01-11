@@ -33,7 +33,7 @@ Entering these names invoke applications.
 
 ### compiled clickable application
 
-Installer of realtimeFoViewer GUI application are linked below. WARNING: The installer starts downloading MATLAB runtime package. The size is about 900 MB. It also makes a clickable application and installes it in the designaged folder.
+Installer of realtimeFoViewer GUI application and waveletVisualizer GUI application are linked below. WARNING: The installer starts downloading MATLAB runtime package. The size is about 900 MB. It also makes a clickable application and installes it in the designaged folder.
 
 1. Realime fo visualization
 
