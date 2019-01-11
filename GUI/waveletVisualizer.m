@@ -38,7 +38,7 @@ function varargout = waveletVisualizer(varargin)
 
 % Edit the above text to modify the response to help waveletVisualizer
 
-% Last Modified by GUIDE v2.5 28-Dec-2018 10:41:45
+% Last Modified by GUIDE v2.5 11-Jan-2019 22:09:32
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -102,6 +102,7 @@ set(myGUIdata.fLowPopup, 'visible', 'off');
 set(myGUIdata.fHighPopup, 'visible', 'off');
 set(myGUIdata.stretchPopup, 'visible', 'off');
 set(myGUIdata.defaultButton, 'visible', 'off');
+set(myGUIdata.wintypePopUp, 'visible', 'off');
 guidata(hObject, myGUIdata);
 myGUIdata = startRealtime(myGUIdata);
 %---
@@ -136,11 +137,13 @@ myGUIdata.high_freuency = 5000;
 myGUIdata.halfTimeSpan = 0.008; % 8 ms (default)
 myGUIdata.fftl = 2048 * 2;
 myGUIdata.stretching_factor = 1.0;
+myGUIdata.wtypeId = 1;
 myGUIdata.synchPhase = -120;
 set(myGUIdata.viewerWidthPopup, 'value', 3);
 set(myGUIdata.fLowPopup, 'value', 3);
 set(myGUIdata.fHighPopup, 'value', 2);
 set(myGUIdata.stretchPopup, 'value', 2);
+set(myGUIdata.wintypePopUp, 'value', 1);
 set(myGUIdata.phaseEdit, 'string', -120);
 end
 
@@ -200,7 +203,7 @@ switch get(myGUIdata.recordObj1,'running')
                     myGUIdata.waveletImage = log(max(sqrt(1/4), min(sqrt(4), diag(1 ./ fc_list)...
                         * instFreqBuffer(:, selector) * fs / 2 / pi)));
                 case 'Group delay*fc'
-                    myGUIdata.waveletImage = max(-0.75, min(0.75, gd_gram(:, selector)));
+                    myGUIdata.waveletImage = max(-0.75, min(0.75, diag(fc_list) * gd_gram_raw(:, selector)));
                 case 'Absolute value'
                     levelBuf = 20 * log10(abs(myGUIdata.imageBuffer(:, selector)));
                     mx_level = max(max(levelBuf));
@@ -274,9 +277,14 @@ set(gca, 'xlim', halfTimeSpan*[-1 1], 'fontsize', 14, 'xtick', [], 'ytick', []);
 %xlabel('time (s)')
 grid on;
 %------- wavelet display
+duration_list = [0.4444 0.2831 0.3050 0.3566 0.4020 0.3619 0.3676];
+mag_effective = myGUIdata.stretching_factor * ...
+    duration_list(1) / duration_list(myGUIdata.wtypeId);
 axes(myGUIdata.waveletAxis);
-wvltStr = designCos6Wavelet(fs, myGUIdata.low_frequency, myGUIdata.high_freuency, ...
-    myGUIdata.fftl, myGUIdata.stretching_factor, myGUIdata.channels_in_octave);
+%wvltStr = designCos6Wavelet(fs, myGUIdata.low_frequency, myGUIdata.high_freuency, ...
+%    myGUIdata.fftl, myGUIdata.stretching_factor, myGUIdata.channels_in_octave);
+wvltStr = designAnalyticWavelet(fs, myGUIdata.low_frequency, myGUIdata.high_freuency, ...
+    myGUIdata.channels_in_octave, mag_effective);
 myGUIdata.n_channles = length(wvltStr.fc_list);
 waveletImage = zeros(myGUIdata.n_channles, length(time_axis));
 for ii = 1:myGUIdata.n_channles
@@ -496,12 +504,14 @@ switch myGUIdata.operationMode
         set(myGUIdata.fHighPopup, 'visible', 'off');
         set(myGUIdata.defaultButton, 'visible', 'off');
         set(myGUIdata.stretchPopup, 'visible', 'off');
+        set(myGUIdata.wintypePopUp, 'visible', 'off');
     case 'Experimental'
         set(myGUIdata.viewerWidthPopup, 'visible', 'on');
         set(myGUIdata.fLowPopup, 'visible', 'on');
         set(myGUIdata.fHighPopup, 'visible', 'on');
         set(myGUIdata.defaultButton, 'visible', 'on');
         set(myGUIdata.stretchPopup, 'visible', 'on');
+        set(myGUIdata.wintypePopUp, 'visible', 'on');
 end
 guidata(hObject, myGUIdata);
 end
@@ -714,6 +724,43 @@ function phaseEdit_CreateFcn(hObject, eventdata, handles)
 % handles    empty - handles not created until after all CreateFcns called
 
 % Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+end
+
+
+% --- Executes on selection change in wintypePopUp.
+function wintypePopUp_Callback(hObject, eventdata, handles)
+% hObject    handle to wintypePopUp (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns wintypePopUp contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from wintypePopUp
+stopbutton_Callback(hObject, eventdata, handles);
+myGUIdata = guidata(hObject);
+myGUIdata.wtypeId = get(hObject,'Value');
+delete(myGUIdata.wvltImageHandle);
+delete(myGUIdata.gainHandle);
+cla(myGUIdata.tunerAxis);
+cla(myGUIdata.dBpowerAxis);
+cla(myGUIdata.waveletAxis);
+cla(myGUIdata.waveAxis);
+myGUIdata = initializeGraphics(myGUIdata);
+guidata(hObject, myGUIdata);
+startButton_Callback(hObject, eventdata, handles);
+end
+
+
+% --- Executes during object creation, after setting all properties.
+function wintypePopUp_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to wintypePopUp (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
