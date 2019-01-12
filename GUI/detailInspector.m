@@ -22,7 +22,7 @@ function varargout = detailInspector(varargin)
 
 % Edit the above text to modify the response to help detailInspector
 
-% Last Modified by GUIDE v2.5 10-Jan-2019 01:05:38
+% Last Modified by GUIDE v2.5 12-Jan-2019 16:57:37
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -226,11 +226,13 @@ axes(handles.freqAxis);
 handles.currentAnalysisResult = outputS;
 tx = outputS.time_axis_wavelet;
 tx_audio = (1:length(x_sel)) / fs;
-semilogy(tx, outputS.fixed_points_freq(:, 4:-1:1), '.');
-grid on;
+handles = renderFreqFixedPoints(handles);
+%semilogy(tx, outputS.fixed_points_freq(:, 4:-1:1), '.');
+%grid on;
 axis([tx([1 end]) handles.frequency_low handles.frequency_high]);
 axes(handles.snrAxis);
-plot(tx, estSNR(:, 4:-1:1), '.');
+%plot(tx, estSNR(:, 4:-1:1), '.');
+plot(tx, estSNR(:, 1:4), '.');
 grid on;
 axis([tx([1 end]) -15 50]) 
 axes(handles.waveAxis);
@@ -373,14 +375,16 @@ outputS = sourceAttributesAnalysis(x_sel, fs, [1 length(x_sel)], ...
     handles.downsampling, handles.stretching, wintype, integration_time);
 watchoff;
 %estSNR = 10 * log10(outputS.fixed_points_measure) - 18;
+handles.currentAnalysisResult = outputS;
 estSNR = outputS.fixed_points_measure;
 axes(handles.freqAxis);
 tx = outputS.time_axis_wavelet;
+handles = renderFreqFixedPoints(handles);
 %tx_audio = (1:length(x_sel)) / fs;
-handles.currentAnalysisResult = outputS;
-semilogy(tx, outputS.fixed_points_freq(:, 4:-1:1), '.');
-grid on;
-axis([currentXlim handles.frequency_low handles.frequency_high]);
+%handles.currentAnalysisResult = outputS;
+%semilogy(tx, outputS.fixed_points_freq(:, 4:-1:1), '.');
+%grid on;
+%axis([currentXlim handles.frequency_low handles.frequency_high]);
 axes(handles.snrAxis);
 plot(tx, estSNR(:, 4:-1:1), '.');
 grid on;
@@ -390,6 +394,41 @@ axis([currentXlim -10 55])
 guidata(hObject, handles);
 set(handles.settingApplyButton, 'enable', 'off');
 set(handles.reportGeneratorButton, 'enable', 'on');
+end
+
+function handles = renderFreqFixedPoints(handles)
+outputS = handles.currentAnalysisResult;
+currentXlim = get(handles.waveAxis, 'xlim');
+estSNR = outputS.fixed_points_measure;
+%axes(handles.freqAxis);
+tx = outputS.time_axis_wavelet;
+%semilogy(tx, outputS.fixed_points_freq(:, 4:-1:1), '.');
+dstep = 3;
+level_list = 35:-dstep:-5;
+color_level_list = (1:length(level_list)) / length(level_list);
+markersize_list = (length(level_list):-1:1) / length(level_list) * 18;
+for ii = 1:length(level_list)
+    switch ii
+        case 1
+            msk = estSNR(:, 1:4) < level_list(ii);
+        otherwise
+            msk = estSNR(:, 1:4) <= level_list(ii) ...
+                | estSNR(:, 1:4) > level_list(ii) + dstep;
+    end
+    freq_msk = outputS.fixed_points_freq(:, 1:4);
+    freq_msk(msk) = NaN;
+    colorV = [0.4 1 0.7] * color_level_list(ii);
+    if isfield(handles, 'param_selector')
+        semilogy(tx(handles.param_selector), freq_msk(handles.param_selector, :), ...
+            '.', 'Color', colorV, 'markersize', markersize_list(ii));
+    else
+        semilogy(tx, freq_msk, '.', 'Color', colorV, 'markersize', markersize_list(ii));
+    end
+    hold all
+end
+grid on;
+axis([currentXlim handles.frequency_low handles.frequency_high]);
+hold off
 end
 
 % --- Executes on button press in reportGeneratorButton.
@@ -407,16 +446,18 @@ channelName = get(handles.channelText, 'String');
 figureHandle = figure;
 %handles.currentAnalysisResult = outputS;
 outputS = handles.currentAnalysisResult;
-estSNR = 10 * log10(outputS.fixed_points_measure) - 18;
+estSNR = outputS.fixed_points_measure;
 tx = outputS.time_axis_wavelet;
 tx_audio = (1:length(x_sel)) / fs;
 param_selector = tx > currentXlim(1) & tx < currentXlim(2);
 wave_selector = tx_audio > currentXlim(1) & tx_audio < currentXlim(2);
 subplot(312)
-semilogy(tx(param_selector), outputS.fixed_points_freq(param_selector, 4:-1:1), '.');
-ylabel('frequency (Hz)');
-grid on;
-axis([currentXlim handles.frequency_low handles.frequency_high]);
+handles.param_selector = param_selector;
+handles = renderFreqFixedPoints(handles);
+%semilogy(tx(param_selector), outputS.fixed_points_freq(param_selector, 4:-1:1), '.');
+%ylabel('frequency (Hz)');
+%grid on;
+%axis([currentXlim handles.frequency_low handles.frequency_high]);
 subplot(313)
 plot(tx(param_selector), estSNR(param_selector, 4:-1:1), '.');
 ylabel('est. SNR (dB)');
@@ -428,15 +469,33 @@ plot(tx_audio(wave_selector), x_sel(wave_selector));
 grid on;
 axis([currentXlim max(abs(x_sel)) * [-1 1]]);
 title(['file: ' fileName '  '  channelName], 'interpreter', 'none');
-figure(figureHandle)
+%figure(figureHandle)
 outfileNameRoot = ['rep' datestr(now, 30)];
 outfileNameFig = [outfileNameRoot 'r.fig'];
+outfileNamePdf = [outfileNameRoot 'r.pdf'];
+outfileNamePng = [outfileNameRoot 'r.png'];
+outfileNameEps = [outfileNameRoot 'r.eps'];
 %print('-depsc', outfileName);
 savefig(outfileNameFig);
+%print('-fillpage', '-dpdf', outfileNamePdf);
+%figure(figureHandle)
+%get(gcf);
+%figure(get(gcf))
+%print(figureHandle, '-r200', '-dpng', outfileNamePng);
+print(figureHandle, '-depsc', outfileNameEps);
 outfileNameTxt = [outfileNameRoot 'r.txt'];
 fid = fopen(outfileNameTxt,'w');
+fprintf(fid, 'Report created: %s \n', datestr(now));
 fprintf(fid, 'Pathname: %s \n', pathName);
 fprintf(fid, 'FileName: %s \n', fileName);
+fprintf(fid, 'Sampling frequency: %12.2f \n', fs);
+fprintf(fid, 'Analysis range: %10.5f %10.5f \n', currentXlim);
+fprintf(fid, 'Donsampled sampling_frequency: %12.2f \n', outputS.wvltStrDs.input_parameters.sampling_frequency);
+fprintf(fid, 'lower_frequency: %12.2f \n', outputS.wvltStrDs.input_parameters.lower_frequency);
+fprintf(fid, 'higher_frequency: %12.2f \n', outputS.wvltStrDs.input_parameters.higher_frequency);
+fprintf(fid, 'stretching_factor: %5.2f \n', outputS.wvltStrDs.input_parameters.stretching_factor);
+fprintf(fid, 'channels_per_octave: %5d \n', outputS.wvltStrDs.input_parameters.channels_per_octave);
+fprintf(fid, 'wintype: %s \n', outputS.wvltStrDs.input_parameters.wintype);
 fclose(fid);
 end
 
