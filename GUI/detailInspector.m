@@ -22,16 +22,16 @@ function varargout = detailInspector(varargin)
 
 % Edit the above text to modify the response to help detailInspector
 
-% Last Modified by GUIDE v2.5 12-Jan-2019 16:57:37
+% Last Modified by GUIDE v2.5 12-Jan-2019 20:05:36
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
-                   'gui_Singleton',  gui_Singleton, ...
-                   'gui_OpeningFcn', @detailInspector_OpeningFcn, ...
-                   'gui_OutputFcn',  @detailInspector_OutputFcn, ...
-                   'gui_LayoutFcn',  [] , ...
-                   'gui_Callback',   []);
+    'gui_Singleton',  gui_Singleton, ...
+    'gui_OpeningFcn', @detailInspector_OpeningFcn, ...
+    'gui_OutputFcn',  @detailInspector_OutputFcn, ...
+    'gui_LayoutFcn',  [] , ...
+    'gui_Callback',   []);
 if nargin && ischar(varargin{1})
     gui_State.gui_Callback = str2func(varargin{1});
 end
@@ -66,7 +66,7 @@ end
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = detailInspector_OutputFcn(hObject, eventdata, handles) 
+function varargout = detailInspector_OutputFcn(hObject, eventdata, handles)
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -152,8 +152,8 @@ set(handles.fileNameText, 'String', fileName);
 [x, fs] = audioread([pathName fileName]);
 if size(x, 2) > 1
     channelName = questdlg('Which channel to analyse?', ...
-                         'Channel selection', ...
-                         'Channel-1', 'Channel-2', 'Channel-2');
+        'Channel selection', ...
+        'Channel-1', 'Channel-2', 'Channel-2');
 else
     channelName = 'Channel-1';
 end
@@ -200,7 +200,7 @@ handles.frequency_low = xlim(1);
 handles.frequency_high = xlim(2);
 set(handles.freqAssignAxis, 'visible', 'off');
 for ii = 1:4
-set(handles.fqSNRScatterHandle(ii), 'visible', 'off');
+    set(handles.fqSNRScatterHandle(ii), 'visible', 'off');
 end
 x_sel = handles.sounddata;
 fs = handles.samplingFrequency;
@@ -234,7 +234,7 @@ axes(handles.snrAxis);
 %plot(tx, estSNR(:, 4:-1:1), '.');
 plot(tx, estSNR(:, 1:4), '.');
 grid on;
-axis([tx([1 end]) -15 50]) 
+axis([tx([1 end]) -15 50])
 axes(handles.waveAxis);
 plot(tx_audio, x_sel);
 set(handles.snrAxis, 'ylim', [-10 55]);
@@ -362,7 +362,7 @@ currentXlim = get(handles.waveAxis, 'xlim');
 x_sel = handles.sounddata;
 fs = handles.samplingFrequency;
 wintype = 'sixterm';
-integration_time = 15; 
+integration_time = 15;
 %handles.channels_per_octave = 12;
 %handles.downsampling = 1;
 %handles.stretching = 1.05;
@@ -388,7 +388,7 @@ handles = renderFreqFixedPoints(handles);
 axes(handles.snrAxis);
 plot(tx, estSNR(:, 4:-1:1), '.');
 grid on;
-axis([currentXlim -10 55]) 
+axis([currentXlim -10 55])
 %axes(handles.waveAxis);
 %plot(tx_audio, x_sel);
 guidata(hObject, handles);
@@ -463,7 +463,7 @@ plot(tx(param_selector), estSNR(param_selector, 4:-1:1), '.');
 ylabel('est. SNR (dB)');
 xlabel('time (s)');
 grid on;
-axis([currentXlim -15 50]) 
+axis([currentXlim -15 50])
 subplot(311);
 plot(tx_audio(wave_selector), x_sel(wave_selector));
 grid on;
@@ -482,21 +482,27 @@ savefig(outfileNameFig);
 %get(gcf);
 %figure(get(gcf))
 %print(figureHandle, '-r200', '-dpng', outfileNamePng);
-print(figureHandle, '-depsc', outfileNameEps);
-outfileNameTxt = [outfileNameRoot 'r.txt'];
-fid = fopen(outfileNameTxt,'w');
-fprintf(fid, 'Report created: %s \n', datestr(now));
-fprintf(fid, 'Pathname: %s \n', pathName);
-fprintf(fid, 'FileName: %s \n', fileName);
-fprintf(fid, 'Sampling frequency: %12.2f \n', fs);
-fprintf(fid, 'Analysis range: %10.5f %10.5f \n', currentXlim);
-fprintf(fid, 'Donsampled sampling_frequency: %12.2f \n', outputS.wvltStrDs.input_parameters.sampling_frequency);
-fprintf(fid, 'lower_frequency: %12.2f \n', outputS.wvltStrDs.input_parameters.lower_frequency);
-fprintf(fid, 'higher_frequency: %12.2f \n', outputS.wvltStrDs.input_parameters.higher_frequency);
-fprintf(fid, 'stretching_factor: %5.2f \n', outputS.wvltStrDs.input_parameters.stretching_factor);
-fprintf(fid, 'channels_per_octave: %5d \n', outputS.wvltStrDs.input_parameters.channels_per_octave);
-fprintf(fid, 'wintype: %s \n', outputS.wvltStrDs.input_parameters.wintype);
-fclose(fid);
+directoryname = uigetdir('', 'Select report output directory:');
+if sum(directoryname == 0) == 0
+    print(figureHandle, '-depsc', [directoryname '/' outfileNameEps]);
+    outfileNameTxt = [directoryname '/' outfileNameRoot 'r.txt'];
+    fid = fopen(outfileNameTxt,'w');
+    fprintf(fid, 'Report created: %s \n', datestr(now));
+    fprintf(fid, 'Pathname: %s \n', pathName);
+    fprintf(fid, 'FileName: %s \n', fileName);
+    fprintf(fid, 'Sampling frequency: %12.2f \n', fs);
+    fprintf(fid, 'Analysis range: %10.5f %10.5f \n', currentXlim);
+    fprintf(fid, 'Donsampled sampling_frequency: %12.2f \n', outputS.wvltStrDs.input_parameters.sampling_frequency);
+    fprintf(fid, 'lower_frequency: %12.2f \n', outputS.wvltStrDs.input_parameters.lower_frequency);
+    fprintf(fid, 'higher_frequency: %12.2f \n', outputS.wvltStrDs.input_parameters.higher_frequency);
+    fprintf(fid, 'stretching_factor: %5.2f \n', outputS.wvltStrDs.input_parameters.stretching_factor);
+    fprintf(fid, 'channels_per_octave: %5d \n', outputS.wvltStrDs.input_parameters.channels_per_octave);
+    fprintf(fid, 'wintype: %s \n', outputS.wvltStrDs.input_parameters.wintype);
+    fclose(fid);
+else
+    display('Report generation is cancelled.');
+end
+close(figureHandle);
 end
 
 
