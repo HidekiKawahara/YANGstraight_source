@@ -459,7 +459,7 @@ handles = renderFreqFixedPoints(handles);
 %grid on;
 %axis([currentXlim handles.frequency_low handles.frequency_high]);
 subplot(313)
-plot(tx(param_selector), estSNR(param_selector, 4:-1:1), '.');
+plot(tx(param_selector), estSNR(param_selector, 1:4), '.');
 ylabel('est. SNR (dB)');
 xlabel('time (s)');
 grid on;
@@ -492,7 +492,7 @@ if sum(directoryname == 0) == 0
     fprintf(fid, 'FileName: %s \n', fileName);
     fprintf(fid, 'Sampling frequency: %12.2f \n', fs);
     fprintf(fid, 'Analysis range: %10.5f %10.5f \n', currentXlim);
-    fprintf(fid, 'Donsampled sampling_frequency: %12.2f \n', outputS.wvltStrDs.input_parameters.sampling_frequency);
+    fprintf(fid, 'Downsampled sampling_frequency: %12.2f \n', outputS.wvltStrDs.input_parameters.sampling_frequency);
     fprintf(fid, 'lower_frequency: %12.2f \n', outputS.wvltStrDs.input_parameters.lower_frequency);
     fprintf(fid, 'higher_frequency: %12.2f \n', outputS.wvltStrDs.input_parameters.higher_frequency);
     fprintf(fid, 'stretching_factor: %5.2f \n', outputS.wvltStrDs.input_parameters.stretching_factor);
