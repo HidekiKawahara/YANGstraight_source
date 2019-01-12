@@ -22,7 +22,7 @@ function varargout = detailInspector(varargin)
 
 % Edit the above text to modify the response to help detailInspector
 
-% Last Modified by GUIDE v2.5 12-Jan-2019 20:05:36
+% Last Modified by GUIDE v2.5 12-Jan-2019 20:35:03
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -476,13 +476,13 @@ outfileNamePdf = [outfileNameRoot 'r.pdf'];
 outfileNamePng = [outfileNameRoot 'r.png'];
 outfileNameEps = [outfileNameRoot 'r.eps'];
 %print('-depsc', outfileName);
-savefig(outfileNameFig);
+%savefig(outfileNameFig);
 %print('-fillpage', '-dpdf', outfileNamePdf);
 %figure(figureHandle)
 %get(gcf);
 %figure(get(gcf))
 %print(figureHandle, '-r200', '-dpng', outfileNamePng);
-directoryname = uigetdir('', 'Select report output directory:');
+directoryname = uigetdir;
 if sum(directoryname == 0) == 0
     print(figureHandle, '-depsc', [directoryname '/' outfileNameEps]);
     outfileNameTxt = [directoryname '/' outfileNameRoot 'r.txt'];
