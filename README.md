@@ -33,7 +33,7 @@ Entering these names invoke applications.
 
 ### compiled clickable application
 
-Installer of realtimeFoViewer GUI application and waveletVisualizer GUI application are linked below. WARNING: The installer starts downloading MATLAB runtime package. The size is about 900 MB. It also makes a clickable application and installes it in the designaged folder.
+Installer of realtimeFoViewer GUI application, and waveletVisualizer GUI application, and  offline interactive GUI inspector are linked below. WARNING: The installer starts downloading MATLAB runtime package. The size is about 900 MB. It also makes a clickable application and installes it in the designaged folder.
 
 1. Realime fo visualization
 
@@ -46,6 +46,13 @@ Installer of realtimeFoViewer GUI application and waveletVisualizer GUI applicat
  [Mac Installer ](http://www.wakayama-u.ac.jp/~kawahara/Resources/waveletVisualizerMac.zip)
  
  [Windows Installer ](http://www.wakayama-u.ac.jp/~kawahara/Resources/waveletVisualizerWin.zip)
+ 
+ 3. Detailed attribute inspector (offline interactive tool)
+
+ [Mac Installer ](http://www.wakayama-u.ac.jp/~kawahara/Resources/detailedInspectorMac.zip)
+ 
+ [Windows Installer ](http://www.wakayama-u.ac.jp/~kawahara/Resources/detailedInspectorWin.zip)
+
 
 
 ## Test scripts
