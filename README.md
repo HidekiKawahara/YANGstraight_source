@@ -8,7 +8,7 @@ GUI tools are for users to acquire intuitive understanding of wavelet phase and 
 
 ## Core functions
 
-The GUI tools and test scripts uses the following core functions.
+The GUI tools and test scripts uses the following core functions. The technical reference in doc direcgtory provides details of the first three core functions.
 
 1. designAnalyticWavelet.m
 2. waveletAttributesAnalyzer.m
