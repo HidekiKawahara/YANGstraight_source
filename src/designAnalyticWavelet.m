@@ -1,5 +1,5 @@
 function output = designAnalyticWavelet(fs, fl, fh, varargin)
-% output = designAnalyticWavelet(fs, fl, fh) 
+% output = designAnalyticWavelet(fs, fl, fh)
 % output = designAnalyticWavelet(fs, fl, fh, channels_oct)
 % output = designAnalyticWavelet(fs, fl, fh, channels_oct, mag)
 % output = designAnalyticWavelet(fs, fl, fh, channels_oct, mag, wintype)
@@ -17,7 +17,7 @@ function output = designAnalyticWavelet(fs, fl, fh, varargin)
 %           default 1
 %   wintype : Envelope defining function
 %             default six-term cosine series in ref [1]. Available types:
-%             'sixterm', 'hanning', 'blackman', 'nuttall12','kaiser','dpss'
+%             'sixterm', 'hanning', 'hamming', 'blackman', 'nuttall12','kaiser','dpss'
 %
 % Output
 %   output   : structure with the following fields : nch: number of wavelets
