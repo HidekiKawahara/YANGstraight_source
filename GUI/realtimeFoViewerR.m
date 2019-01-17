@@ -622,9 +622,13 @@ function saveButton_Callback(hObject, eventdata, handles)
 myGUIdata = guidata(hObject);
 soundHandle = get(myGUIdata.recordObj1, 'userdata');
 outFileName = ['snapD' datestr(now, 30) '.wav'];
-audiowrite( outFileName, soundHandle.recordingBuffer(1:soundHandle.lastPoint), myGUIdata.samplingFrequency, ...
+directoryname = uigetdir('', 'Select report output directory:');
+if sum(directoryname == 0) == 0
+audiowrite([directoryname '/' outFileName], ...
+    soundHandle.recordingBuffer(1:soundHandle.lastPoint), myGUIdata.samplingFrequency, ...
     'BitsPerSample', 32);
 disp(['snapshot file:' outFileName]);
+end
 set(myGUIdata.saveButton, 'enable', 'off');
 end
 
