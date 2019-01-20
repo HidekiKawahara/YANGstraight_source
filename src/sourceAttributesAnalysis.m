@@ -1,5 +1,5 @@
 function output = sourceAttributesAnalysis(x, fs, varargin)
-% This function analysis source information using an analytic signal 
+% This function analysis source information using an analytic signal
 % with the six-term cosine series envelope
 %
 % sourceAttributesAnalysis(x, fs)
@@ -161,13 +161,9 @@ if ~isInitialized
         downSamplinbgRate = max(1, floor (fs / (high_freuency * sampling_multiplier)));
     end
     fsd = fs / downSamplinbgRate;
-    %half_aaf_length = max(1, downSamplinbgRate * 2 - 1);
     half_aaf_length = round(max(1, downSamplinbgRate * 3.5 - 1));
-    %w_aaf = hanning(round(2 * half_aaf_length + 1));
     w_aaf = blackman(round(2 * half_aaf_length + 1));
     fftlds = fftl / 2;
-%    wvltStrDs = designCos6Wavelet(fsd, low_frequency, high_freuency, ...
-%        fftlds, stretching_factor, channels_in_octave);
     wvltStrDs = designAnalyticWavelet(fsd, low_frequency, high_freuency, ...
         channels_in_octave, stretching_factor, wintype);
 else
@@ -177,6 +173,10 @@ else
     half_aaf_length = outputStruct.half_aaf_length;
     w_aaf = outputStruct.w_aaf;
     fsd = fs / downSamplinbgRate;
+    integration_time = outputStruct.integration_time;
+    sampling_multiplier = outputStruct.sampling_multiplier;
+    low_frequency = outputStruct.wvltStrDs.input_parameters.lower_frequency;
+    high_freuency = outputStruct.wvltStrDs.input_parameters.higher_frequency;
 end
 if downSamplinbgRate > 1
 xd = fftfilt(w_aaf/sum(w_aaf), x_trim);
@@ -192,7 +192,6 @@ outputDs = waveletAttributesAnalyzer(xd, fsd, wvltStrDs);
 %%
 
 n_samples = length(outputDs.rawWavelet(:, 1));
-%scanning_width = 40; % ms *** MAGIC NUMBER ****
 sample_distance = round(integration_time / 1000 * fsd);
 selector = sample_distance:n_samples - sample_distance;
 bias = floor(sample_distance / 2);
@@ -211,7 +210,6 @@ if_sm_tmp = fftfilt(hanning(sample_distance), amp_sq .* amp_sq(:, [1 1:end-1]) .
 if_sm_map = if_sm_tmp ./ amp_sm_tmp_if;
 if_dev_map = if_sm_map(selector - bias, :) * diag(1 ./ fc_list .^ 4) * fsd ^2;
 mix_measure = sqrt((gd_dev_map + if_dev_map) / 2);
-%mix_measure = sqrt(if_dev_map);
 mix_measure(mix_measure <= 0) = min(mix_measure(mix_measure > 0));
 mix_rev_measure = 1.0 ./ mix_measure;
 
@@ -220,7 +218,6 @@ amp_smoothed = fftfilt(hanning(sample_distance), outputDs.amp_squared_map);
 if_smoothed = if_smoothed ./ amp_smoothed;
 if_smoothed = if_smoothed(selector - bias, :);
 
-%if_dev_map = outputDs.inst_freq_map(selector - selector(1) + 1, :) * diag(1 ./ fc_list);
 if_norm_map = if_smoothed * diag(1 ./ fc_list);
 log_if_dev_map = log(max(0.5, if_norm_map));
 fixed_points = zeros(n_samples, n_channels);
@@ -243,45 +240,36 @@ for ii = selector
                 fc_list(tmp_fixp(kk)) + (fc_list(tmp_fixp(kk) + 1) - fc_list(tmp_fixp(kk))) * r;
             fixed_points_measure(buffer_id, kk) = (1 - r) * mix_rev_measure(buffer_id, max(1, tmp_fixp(kk) - 1)) ...
                 + r * mix_rev_measure(buffer_id, tmp_fixp(kk));
-%            fixed_points_measure(buffer_id, kk) = (1 - r) * mix_measure(buffer_id, max(1, tmp_fixp(kk) - 1)) ...
-%                + r * mix_measure(buffer_id, tmp_fixp(kk));
             fixed_points_amp(buffer_id, kk) = (1 - r) * amplitude(buffer_id, max(1, tmp_fixp(kk) - 1)) ...
                 + r * amplitude(buffer_id, tmp_fixp(kk));
         end
         [sortedv, sortIdx] = sort(fixed_points_measure(buffer_id, 1:length(tmp_fixp)), 'descend');
-%        [sortedv, sortIdx] = sort(fixed_points_measure(buffer_id, 1:length(tmp_fixp)));
         fixed_points_measure(buffer_id, 1:length(tmp_fixp)) = sortedv;
         fixed_points_freq(buffer_id, 1:length(tmp_fixp)) = fixed_points_freq(buffer_id, sortIdx);
         fixed_points_amp(buffer_id, 1:length(tmp_fixp)) = fixed_points_amp(buffer_id, sortIdx);
     end
 end
-%minaa = -1.9731 / 1000;
-%biasEst = -28.2955;
-%rev_mes_dB = -10 * log10(fixed_points_measure);
-%estRandom = rev_mes_dB +  minaa * 1200 * log2(fixed_points_freq) - biasEst + 25;
-%output.estPeriod = sqrt(1 ./ (1 + 10 .^ (estRandom / 10)));
 estSNR = revMeasure2SNR(fixed_points_measure, wintype);
 output.estPeriod = 1 ./ (1 + exp(-(estSNR - 15) / 6));
 output.wvltStrDs = wvltStrDs;
 output.rawWavelet = outputDs.rawWavelet;
-%output.outputDs = outputDs; % for debug
 output.inst_freq_map = outputDs.inst_freq_map;
 output.if_smooth_map = if_smoothed;
 output.downSamplinbgRate = downSamplinbgRate;
 output.fftlds = fftlds;
 output.half_aaf_length = half_aaf_length;
 output.w_aaf = w_aaf;
-output.time_axis_wavelet = (1:n_samples) / fsd + ixrange(1) / fs;% + wvltStrDs.wvlt(1).bias / fsd;
-%output.time_axis_wavelet = output.time_axis_wavelet(selector - bias);
+output.integration_time = integration_time;
+output.sampling_multiplier = sampling_multiplier;
+output.time_axis_wavelet = (1:n_samples) / fsd + ixrange(1) / fs;
 output.signal_time_axis = (ixrange(1):ixrange(2)) / fs;
 output.gd_dev_map = gd_dev_map;
 output.if_dev_map = if_dev_map;
 output.n_effective = size(if_dev_map, 1);
-%output.dgd_dev_map = dgd_dev_map;
 output.mix_rev_measure = mix_rev_measure;
 output.mix_measure = mix_measure;
 output.fixed_points_freq = fixed_points_freq;
-output.fixed_points_measure = estSNR;%revMeasure2SNR(fixed_points_measure, wintype);
+output.fixed_points_measure = estSNR;
 output.fixed_points_amp = fixed_points_amp;
 output.elapsedTime = toc(start_tic);
 end
