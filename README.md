@@ -57,11 +57,11 @@ Installer of realtimeFoViewer GUI application, and waveletVisualizer GUI applica
 
 ## Test scripts
 
-The test directory consists of MATLAB scripts to test core functions.
+The test directory consists of MATLAB scripts to test core functions. New collection of test scripts are added.
 
 ## Demo movies and documents
 
-The doc directory consists of demonstration movies including short introduction and documents.
+The doc directory consists of demonstration movies including short introduction and documents. The reference manual is elaborated.
 
 ## Requirement
 
