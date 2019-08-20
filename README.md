@@ -31,11 +31,11 @@ The GUI directory consists of interactive tools (including realtime tools) for t
 
 Entering these names invoke applications.
 
-### compiled clickable application
+### compiled clickable application (These are outdated: 21/Aug./2019. Will be updated.)
 
 Installer of realtimeFoViewer GUI application, and waveletVisualizer GUI application, and  offline interactive GUI inspector are linked below. WARNING: The installer starts downloading MATLAB runtime package. The size is about 900 MB. It also makes a clickable application and installes it in the designaged folder.
 
-1. Realime fo visualization
+1. Realime fo visualization 
 
  [Mac Installer ](http://www.wakayama-u.ac.jp/~kawahara/Resources/realtimeFoViewerMac.zip)
  
